@@ -1,0 +1,19 @@
+# Environment — NEVER commit credentials
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Alembic
+alembic/versions/__pycache__/

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperMatrix Data Extractor — Google Ads API Design Document</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      line-height: 1.65;
+      background: #fff;
+      padding: 0;
+    }
+
+    /* ── Cover Page ── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 80px 80px 60px;
+      background: linear-gradient(135deg, #1a1f36 0%, #0d1b2a 100%);
+      color: #fff;
+      page-break-after: always;
+    }
+    .cover-badge {
+      font-size: 9pt;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6fb3f0;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+    .cover-title {
+      font-size: 34pt;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+    .cover-sub {
+      font-size: 14pt;
+      color: #a0b4c8;
+      margin-bottom: 56px;
+      max-width: 560px;
+    }
+    .cover-meta {
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 32px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 32px;
+    }
+    .cover-meta-item label {
+      font-size: 8pt;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #6fb3f0;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .cover-meta-item span {
+      font-size: 10pt;
+      color: #d0dce8;
+    }
+
+    /* ── Page Layout ── */
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 60px 70px;
+    }
+
+    /* ── Section Headers ── */
+    .section-label {
+      font-size: 8pt;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #2563eb;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 24px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h2 {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 36px;
+      margin-bottom: 10px;
+    }
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e40af;
+      margin-top: 22px;
+      margin-bottom: 6px;
+    }
+
+    p { margin-bottom: 12px; }
+    ul, ol { margin: 8px 0 14px 22px; }
+    li { margin-bottom: 5px; }
+
+    /* ── Callout Box ── */
+    .callout {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px;
+      margin: 18px 0;
+      font-size: 10.5pt;
+    }
+    .callout strong { color: #1d4ed8; }
+
+    .callout-green {
+      background: #f0fdf4;
+      border-left-color: #16a34a;
+    }
+    .callout-green strong { color: #15803d; }
+
+    .callout-amber {
+      background: #fffbeb;
+      border-left-color: #d97706;
+    }
+    .callout-amber strong { color: #b45309; }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 10pt;
+    }
+    th {
+      background: #1e40af;
+      color: #fff;
+      padding: 9px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 9.5pt;
+      letter-spacing: 0.3px;
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 9.5pt;
+      color: #1e40af;
+    }
+
+    /* ── Architecture Diagram (text-based) ── */
+    .arch-box {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      background: #f8fafc;
+    }
+    .arch-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 10pt;
+    }
+    .arch-node {
+      background: #1e40af;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 9.5pt;
+      white-space: nowrap;
+    }
+    .arch-node-gray {
+      background: #64748b;
+    }
+    .arch-node-green {
+      background: #16a34a;
+    }
+    .arch-arrow {
+      color: #94a3b8;
+      font-size: 14pt;
+    }
+    .arch-label {
+      font-size: 8.5pt;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    /* ── Page breaks ── */
+    .page-break { page-break-before: always; padding-top: 60px; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 9pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .arch-node { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  COVER PAGE                                                    -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Google Ads API — Design Document</div>
+  <div class="cover-title">SuperMatrix<br>Data Extractor</div>
+  <div class="cover-sub">
+    Internal campaign reporting tool for Google Ads MCC accounts.<br>
+    Read-only API access for internal analytics and performance monitoring.
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Document Version</label>
+      <span>1.0</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Date</label>
+      <span>April 2026</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Access Level Requested</label>
+      <span>Basic Access</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>MCC ID</label>
+      <span>844-978-1254</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Tool Type</label>
+      <span>Internal Reporting Dashboard</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>API Usage</label>
+      <span>Read-Only, No Campaign Modifications</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 1 — PRODUCT OVERVIEW                                  -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Section 1</div>
+  <h1>Product Overview</h1>
+
+  <p>
+    <strong>SuperMatrix Data Extractor</strong> is an internal web application built to consolidate
+    campaign performance data from Google Ads (and other advertising platforms) into a single,
+    unified reporting dashboard for internal use by our agency team.
+  </p>
+
+  <p>
+    Our agency manages Google Ads accounts for multiple clients across different verticals —
+    e-commerce, lead generation, and service-based businesses. All client accounts are linked
+    under a single Google Ads Manager Account (MCC ID: <strong>844-978-1254</strong>).
+    Today, account managers must log into each client account individually to pull reports —
+    a process that is time-consuming and error-prone.
+  </p>
+
+  <p>
+    SuperMatrix solves this by using the Google Ads API to auto-discover all child accounts
+    under the MCC with a single credential set, pull standardised campaign metrics on a
+    scheduled basis, store them in a local PostgreSQL database, and present them in a
+    single-pane dashboard for the internal team.
+  </p>
+
+  <div class="callout">
+    <strong>Key point:</strong> This tool is strictly read-only. It never creates, modifies,
+    pauses, or deletes any campaigns, ad groups, ads, keywords, or bids. Its only interaction
+    with the Google Ads API is fetching performance reports.
+  </div>
+
+  <h2>Core Objectives</h2>
+  <ul>
+    <li>Automatically discover all Google Ads client accounts linked to our MCC</li>
+    <li>Pull weekly campaign-level metrics per client account</li>
+    <li>Pull granular breakdowns: search terms, keywords, time segments, demographics</li>
+    <li>Store data locally for trend analysis and week-over-week comparisons</li>
+    <li>Give internal account managers a single dashboard instead of logging into each account</li>
+  </ul>
+
+  <h2>What the Tool Does NOT Do</h2>
+  <ul>
+    <li>Does not create, edit, pause, or delete any campaigns, ad groups, or ads</li>
+    <li>Does not modify bids, budgets, or targeting settings</li>
+    <li>Does not manage billing or payment information</li>
+    <li>Does not perform conversion tracking or remarketing</li>
+    <li>Does not expose client data to third parties</li>
+    <li>Is not accessible to clients or any external users</li>
+  </ul>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 2 — SYSTEM ARCHITECTURE                               -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Section 2</div>
+  <h1>System Architecture</h1>
+
+  <p>
+    SuperMatrix follows a standard three-tier web application architecture: a
+    Next.js frontend, a Python FastAPI backend, and a PostgreSQL database.
+    The Google Ads API is called exclusively from the backend service —
+    no API calls are made from the browser or frontend.
+  </p>
+
+  <h2>Architecture Diagram</h2>
+  <div class="arch-box">
+    <div class="arch-row">
+      <span class="arch-node arch-node-gray">Internal User (Browser)</span>
+      <span class="arch-arrow">→</span>
+      <span class="arch-node">Next.js Frontend</span>
+      <span class="arch-label">Internal network only. No public access.</span>
+    </div>
+    <div class="arch-row" style="margin-left:40px;">
+      <span class="arch-arrow" style="font-size:18pt;">↓</span>
+      <span class="arch-label">REST API calls (HTTP/JSON)</span>
+    </div>
+    <div class="arch-row">
+      <span class="arch-node arch-node-gray" style="opacity:0;pointer-events:none;">placeholder</span>
+      <span class="arch-node">FastAPI Backend (Python)</span>
+      <span class="arch-label">Hosts connectors, business logic, schedulers</span>
+    </div>
+    <div class="arch-row" style="margin-left:200px;">
+      <span class="arch-arrow" style="font-size:18pt;">↓</span>
+      <span class="arch-label">Google Ads API v23 (gRPC / GAQL)</span>
+    </div>
+    <div class="arch-row" style="margin-left:120px;">
+      <span class="arch-node arch-node-green">Google Ads API</span>
+      <span class="arch-label">Read-only GAQL queries against MCC child accounts</span>
+    </div>
+    <div class="arch-row" style="margin-left:200px;">
+      <span class="arch-arrow" style="font-size:18pt;">↓</span>
+      <span class="arch-label">Parsed response stored locally</span>
+    </div>
+    <div class="arch-row" style="margin-left:110px;">
+      <span class="arch-node arch-node-gray">PostgreSQL Database</span>
+      <span class="arch-label">Local storage — campaign metrics, job logs</span>
+    </div>
+  </div>
+
+  <h2>Technology Stack</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Role</th></tr>
+    <tr><td>Frontend</td><td>Next.js 14 (React)</td><td>Internal dashboard UI</td></tr>
+    <tr><td>Backend API</td><td>Python 3.11, FastAPI</td><td>Business logic, API connectors</td></tr>
+    <tr><td>Google Ads SDK</td><td>google-ads Python v30</td><td>Authenticates and queries the Google Ads API</td></tr>
+    <tr><td>Database</td><td>PostgreSQL 15</td><td>Stores all pulled metrics and job logs</td></tr>
+    <tr><td>Task Scheduler</td><td>Celery + Redis</td><td>Weekly scheduled data pulls</td></tr>
+    <tr><td>Authentication</td><td>OAuth 2.0 (offline refresh token)</td><td>MCC-level auth with single credential set</td></tr>
+  </table>
+
+  <h2>Deployment</h2>
+  <p>
+    The application runs entirely on internal infrastructure (local server or private
+    cloud VM). It is not publicly hosted and is accessible only to employees on the
+    internal network. There is no public-facing URL or external user access.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 3 — AUTHENTICATION & MCC DESIGN                      -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Section 3</div>
+  <h1>Authentication &amp; MCC Design</h1>
+
+  <h2>OAuth 2.0 Flow</h2>
+  <p>
+    SuperMatrix authenticates with the Google Ads API using a single OAuth 2.0 offline
+    refresh token obtained from a Google account that is an administrator of the MCC
+    (Manager Account ID: <strong>844-978-1254</strong>).
+    Credentials are stored in environment variables on the backend server and are
+    never exposed to the frontend or any external party.
+  </p>
+
+  <h3>Credential Storage</h3>
+  <ul>
+    <li><code>GOOGLE_ADS_DEVELOPER_TOKEN</code> — stored as environment variable</li>
+    <li><code>GOOGLE_ADS_CLIENT_ID</code> — stored as environment variable</li>
+    <li><code>GOOGLE_ADS_CLIENT_SECRET</code> — stored as environment variable</li>
+    <li><code>GOOGLE_ADS_REFRESH_TOKEN</code> — stored as environment variable</li>
+    <li><code>GOOGLE_ADS_MCC_ID</code> — stored as environment variable</li>
+  </ul>
+
+  <div class="callout callout-green">
+    <strong>Security:</strong> Credentials are never committed to version control.
+    The <code>.env</code> file is excluded from git via <code>.gitignore</code>.
+    Only the backend process can read these values.
+  </div>
+
+  <h2>MCC Account Discovery</h2>
+  <p>
+    All Google Ads API requests use <code>login_customer_id</code> set to the MCC ID.
+    To discover child accounts, the tool runs the following GAQL query against the MCC:
+  </p>
+
+  <div class="arch-box">
+    <code style="display:block; white-space:pre; font-size:9.5pt; line-height:1.8;">SELECT
+    customer_client.client_customer,
+    customer_client.descriptive_name,
+    customer_client.id,
+    customer_client.manager,
+    customer_client.status
+FROM customer_client
+WHERE customer_client.level &lt;= 1</code>
+  </div>
+
+  <p>
+    Results are filtered to exclude manager accounts (<code>customer_client.manager = false</code>).
+    This gives a complete, accurate list of all direct child accounts under the MCC
+    without querying any accounts outside of it.
+  </p>
+
+  <h2>Per-Account Data Pulls</h2>
+  <p>
+    Once child accounts are discovered, data is pulled for each by setting
+    <code>customer_id</code> to the child account ID while keeping
+    <code>login_customer_id</code> as the MCC. This is the standard pattern
+    recommended by Google for MCC-based tools.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 4 — API USAGE & GAQL QUERIES                         -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Section 4</div>
+  <h1>API Usage &amp; GAQL Queries</h1>
+
+  <div class="callout callout-green">
+    <strong>Read-only:</strong> All API interactions use <code>GoogleAdsService.Search</code> or
+    <code>GoogleAdsService.SearchStream</code>. No mutate services are used.
+    The tool never calls <code>CampaignService.MutateCampaigns</code> or any other
+    mutate method.
+  </div>
+
+  <h2>Google Ads API Resources Used</h2>
+  <table>
+    <tr>
+      <th>Resource</th>
+      <th>Purpose</th>
+      <th>Campaign Types</th>
+    </tr>
+    <tr>
+      <td><code>customer_client</code></td>
+      <td>Discover all child accounts under MCC</td>
+      <td>All</td>
+    </tr>
+    <tr>
+      <td><code>campaign</code></td>
+      <td>Campaign-level metrics: impressions, clicks, spend, CTR, conversions, ROAS</td>
+      <td>Search, Shopping, Display, Performance Max, Video</td>
+    </tr>
+    <tr>
+      <td><code>search_term_view</code></td>
+      <td>Top 10 search terms by clicks (last 7 days)</td>
+      <td>Search, Performance Max</td>
+    </tr>
+    <tr>
+      <td><code>keyword_view</code></td>
+      <td>Top 10 keywords by impressions, quality scores</td>
+      <td>Search</td>
+    </tr>
+    <tr>
+      <td><code>campaign</code> + <code>segments.day_of_week</code></td>
+      <td>Day-of-week performance breakdown</td>
+      <td>All</td>
+    </tr>
+    <tr>
+      <td><code>campaign</code> + <code>segments.hour</code></td>
+      <td>Hour-of-day performance breakdown</td>
+      <td>All</td>
+    </tr>
+    <tr>
+      <td><code>gender_view</code></td>
+      <td>Gender &amp; age demographic breakdown</td>
+      <td>Display, Video</td>
+    </tr>
+    <tr>
+      <td><code>customer</code></td>
+      <td>Account name lookup (fallback)</td>
+      <td>All</td>
+    </tr>
+  </table>
+
+  <h2>Sample GAQL Queries</h2>
+
+  <h3>Campaign Performance (last 7 days)</h3>
+  <div class="arch-box">
+    <code style="display:block; white-space:pre; font-size:9pt; line-height:1.8;">SELECT
+    campaign.id, campaign.name,
+    metrics.impressions, metrics.clicks, metrics.cost_micros,
+    metrics.ctr, metrics.average_cpc,
+    metrics.conversions, metrics.conversions_value,
+    metrics.cost_per_conversion, metrics.search_impression_share,
+    segments.date
+FROM campaign
+WHERE segments.date DURING LAST_7_DAYS
+  AND campaign.status = 'ENABLED'
+ORDER BY metrics.impressions DESC</code>
+  </div>
+
+  <h3>Top Search Terms (last 7 days, top 10 by clicks)</h3>
+  <div class="arch-box">
+    <code style="display:block; white-space:pre; font-size:9pt; line-height:1.8;">SELECT
+    search_term_view.search_term,
+    metrics.impressions, metrics.clicks, metrics.ctr,
+    metrics.average_cpc, metrics.conversions
+FROM search_term_view
+WHERE segments.date DURING LAST_7_DAYS
+ORDER BY metrics.clicks DESC
+LIMIT 10</code>
+  </div>
+
+  <h3>Demographics (gender &amp; age)</h3>
+  <div class="arch-box">
+    <code style="display:block; white-space:pre; font-size:9pt; line-height:1.8;">SELECT
+    ad_group_criterion.gender.type,
+    ad_group_criterion.age_range.type,
+    metrics.impressions, metrics.clicks, metrics.cost_micros,
+    metrics.conversions, segments.date
+FROM gender_view
+WHERE segments.date DURING LAST_7_DAYS</code>
+  </div>
+
+  <h2>API Call Frequency</h2>
+  <table>
+    <tr><th>Trigger</th><th>Queries per client account</th><th>Estimated daily ops</th></tr>
+    <tr><td>Weekly scheduled pull (all clients)</td><td>7 queries per account</td><td>~70 ops (10 clients × 7)</td></tr>
+    <tr><td>Manual pull (single client)</td><td>7 queries</td><td>7 ops per manual trigger</td></tr>
+    <tr><td>MCC account discovery</td><td>1 query</td><td>1 op per page load</td></tr>
+  </table>
+
+  <div class="callout callout-amber">
+    <strong>Well within Basic Access limits:</strong> Basic Access allows 15,000 operations/day.
+    Our estimated peak usage is under 200 operations/day, which is approximately
+    1.3% of the Basic Access daily quota.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 5 — DATA FLOW & STORAGE                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Section 5</div>
+  <h1>Data Flow &amp; Storage</h1>
+
+  <h2>Data Pull Workflow</h2>
+  <ol>
+    <li>A scheduled job (weekly, every Monday) or a manual trigger fires in the backend</li>
+    <li>The backend queries the MCC via <code>customer_client</code> GAQL to get all child account IDs</li>
+    <li>For each child account, the backend runs 6 GAQL read queries (campaign, search terms, keywords, time segments ×2, demographics)</li>
+    <li>API responses are parsed, typed, and inserted into the local PostgreSQL database</li>
+    <li>Each insert is deduplicated by <code>(client_id, report_date)</code> to prevent duplicate rows</li>
+    <li>The pull job status (success/failed/partial) is logged to the <code>pull_jobs</code> table</li>
+    <li>Internal users view the aggregated results in the Next.js dashboard</li>
+  </ol>
+
+  <h2>Database Tables (Google Ads data)</h2>
+  <table>
+    <tr><th>Table</th><th>Data Stored</th><th>Retention</th></tr>
+    <tr><td><code>google_ads_campaigns</code></td><td>Daily campaign metrics per client</td><td>2 years</td></tr>
+    <tr><td><code>google_ads_search_terms</code></td><td>Top search terms per pull</td><td>2 years</td></tr>
+    <tr><td><code>google_ads_keywords</code></td><td>Top keywords per pull</td><td>2 years</td></tr>
+    <tr><td><code>google_ads_time_segments</code></td><td>Day/hour performance breakdowns</td><td>2 years</td></tr>
+    <tr><td><code>google_ads_demographics</code></td><td>Gender &amp; age breakdowns</td><td>2 years</td></tr>
+    <tr><td><code>pull_jobs</code></td><td>Job status, timestamps, error logs</td><td>1 year</td></tr>
+  </table>
+
+  <h2>Data Security &amp; Privacy</h2>
+  <ul>
+    <li>All data is stored on a private, internal server — not in any public cloud storage</li>
+    <li>The database is not accessible from outside the internal network</li>
+    <li>No client campaign data is shared with third parties or other tools</li>
+    <li>No personal user data (consumer PII) is collected — only aggregated ad performance metrics</li>
+    <li>API credentials are stored in environment variables, never in code or logs</li>
+  </ul>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  SECTION 6 — USER ACCESS & PERMISSIONS                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="section-label">Section 6</div>
+  <h1>User Access &amp; Permissions</h1>
+
+  <h2>Who Uses This Tool</h2>
+  <p>
+    SuperMatrix is an <strong>internal-only tool</strong>. Access is restricted to
+    employees and contractors of our agency. Clients do not have access to this tool
+    and cannot view it or log into it.
+  </p>
+
+  <table>
+    <tr><th>User Type</th><th>Access Level</th><th>What They Can Do</th></tr>
+    <tr>
+      <td>Account Manager (internal)</td>
+      <td>Read-only dashboard viewer</td>
+      <td>View campaign metrics, pull history, client summaries</td>
+    </tr>
+    <tr>
+      <td>Admin / Developer (internal)</td>
+      <td>Full application access</td>
+      <td>Configure clients, trigger manual pulls, manage MCC imports</td>
+    </tr>
+    <tr>
+      <td>External clients</td>
+      <td>No access</td>
+      <td>Not applicable — clients do not have login credentials</td>
+    </tr>
+    <tr>
+      <td>General public</td>
+      <td>No access</td>
+      <td>Application is not publicly accessible</td>
+    </tr>
+  </table>
+
+  <h2>No Third-Party API Usage</h2>
+  <p>
+    The Google Ads developer token is used exclusively with this internal tool.
+    It is not shared with, resold to, or used in any tool developed by a third party.
+    The same token is not used for any other application or service.
+  </p>
+
+  <div class="callout callout-green">
+    <strong>Summary:</strong> Internal employees only. No public access. No client access.
+    No third-party usage of the developer token.
+  </div>
+
+  <h2>Compliance</h2>
+  <ul>
+    <li>The tool complies with Google Ads API Terms of Service</li>
+    <li>All API usage is within the rate limits appropriate for Basic Access (15,000 ops/day)</li>
+    <li>Credentials are rotated as needed and never shared externally</li>
+    <li>The API contact email is monitored and will respond to any notices from the Google Ads API team within 48 hours</li>
+  </ul>
+
+  <div class="footer">
+    <span>SuperMatrix Data Extractor — Google Ads API Design Document v1.0</span>
+    <span>Confidential — Internal Use Only</span>
+  </div>
+</div>
+
+</body>
+</html>
