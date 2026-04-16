@@ -15,7 +15,8 @@ export default function KPICard({ label, value, change, prefix = '', suffix = ''
   const changeNum = change ? parseFloat(change) : null;
   const isPositive = changeNum !== null && changeNum > 0;
   const isNegative = changeNum !== null && changeNum < 0;
-  const isNeutral = changeNum === null || changeNum === 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _isNeutral = changeNum === null || changeNum === 0;
 
   return (
     <div className="stat-card" style={{ position: 'relative' }}>

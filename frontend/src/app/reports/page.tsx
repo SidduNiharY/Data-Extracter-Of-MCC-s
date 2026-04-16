@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FileBarChart, Filter, Plus, Calendar, RefreshCw, Loader2 } from 'lucide-react';
+import { FileBarChart, Filter, Plus, Calendar, RefreshCw, Loader2, History } from 'lucide-react';
 import { api } from '../../lib/api';
 import ReportCard from '../../components/ReportCard';
 import type { ReportSummary, Client } from '../../types';
@@ -10,6 +10,7 @@ export default function ReportsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   // Filters
   const [filterType, setFilterType] = useState<string>('');
@@ -41,10 +42,32 @@ export default function ReportsPage() {
   async function handleGenerateAll(type: 'weekly' | 'monthly') {
     setGenerating(true);
     await api.generateAllReports(type);
+    // Poll every 3 seconds until no more "generating" reports
+    const poll = setInterval(async () => {
+      const updated = await api.getReports({});
+      setReports(updated);
+      const stillGenerating = updated.some(r => r.status === 'generating');
+      if (!stillGenerating) {
+        clearInterval(poll);
+        setGenerating(false);
+      }
+    }, 3000);
+    // Safety timeout — stop polling after 2 minutes
+    setTimeout(() => {
+      clearInterval(poll);
+      setGenerating(false);
+      loadData();
+    }, 120000);
+  }
+
+  async function handleBackfillAll() {
+    setBackfilling(true);
+    await api.backfillReports(undefined, 24, 6);
+    // Backfill runs in background — poll for a few seconds then refresh
     setTimeout(() => {
       loadData();
-      setGenerating(false);
-    }, 2000);
+      setBackfilling(false);
+    }, 4000);
   }
 
   const readyCount = reports.filter(r => r.status === 'ready').length;
@@ -65,13 +88,22 @@ export default function ReportsPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => handleGenerateAll('weekly')} disabled={generating}>
-              {generating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Generate Weekly
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleBackfillAll}
+              disabled={backfilling || generating}
+              title="Generate last 12 months + 6 weeks of reports for all clients"
+            >
+              {backfilling ? <Loader2 size={14} className="animate-spin" /> : <History size={14} />}
+              Generate History
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => handleGenerateAll('monthly')} disabled={generating}>
+            <button className="btn btn-secondary btn-sm" onClick={() => handleGenerateAll('weekly')} disabled={generating || backfilling}>
+              {generating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              This Week
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => handleGenerateAll('monthly')} disabled={generating || backfilling}>
               {generating ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} />}
-              Generate Monthly
+              This Month
             </button>
           </div>
         </div>
