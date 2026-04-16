@@ -1,0 +1,54 @@
+
+## 🧩 Core Components Breakdown
+
+### 1. Frontend (Client Layer)
+*   **Purpose:** Provides the interactive user experience for managing clients, triggering data pulls, viewing reports, and configuring settings.
+*   **Key Features:**
+    *   Client Management (CRUD operations).
+    *   Data Source Connection Setup (OAuth/Token handling).
+    *   Report Visualization (Charts, KPIs, Tables).
+    *   Job Monitoring (Viewing status of background tasks).
+*   **Interaction:** Communicates exclusively with the Backend API via REST endpoints.
+
+### 2. Backend API (Orchestration Layer)
+*   **Purpose:** Acts as the single entry point for all client requests. It validates input, manages business logic, and coordinates tasks between the database and background workers.
+*   **Key Responsibilities:**
+    *   **Routing:** Directing requests to the appropriate service/connector.
+    *   **Authentication/Authorization:** Ensuring users/clients have permission to perform actions.
+    *   **Job Management:** Creating `PullJob` records and initiating background tasks.
+    *   **Data Aggregation:** Calling services to calculate metrics and compile reports before returning them to the client.
+
+### 3. Data Connectors (Integration Layer)
+*   **Purpose:** Abstract away the complexities and specific APIs of external data sources. Each connector is responsible for authenticating and pulling raw data from one specific platform.
+*   **Connectors:**
+    *   **Google Ads:** Handles MCC/Client ID structure and specific query language.
+    *   **Google Analytics 4 (GA4):** Interacts with the GA4 Data API.
+    *   **Meta Ads:** Manages Graph API interactions for Facebook/Instagram data.
+    *   **Shopify:** Handles REST API calls for order and product data.
+*   **Data Flow:** Connectors pull raw data and store it in the database, typically linked to a specific `Client` and `Source`.
+
+### 4. Background Processing & Scheduling (Asynchronous Layer)
+*   **Purpose:** Executes long-running, resource-intensive tasks without blocking the main API thread.
+*   **Services:**
+    *   **Data Pulling:** Triggered when a user requests data for a specific period.
+    *   **Report Generation:** Complex, multi-step process that aggregates data from multiple sources, runs calculations, and saves the final report artifact.
+    *   **Scheduling:** Handles recurring tasks (e.g., daily/weekly report generation for all clients).
+
+## 🔄 Data Flow Summary
+
+1.  **Client Action:** User requests a report or data pull via the Frontend.
+2.  **API Request:** The request hits the FastAPI Backend API.
+3.  **Job Creation:** The API validates the request and creates a `PullJob` or `Report` record in the database.
+4.  **Task Dispatch:** The API dispatches the task to the Background Task Queue.
+5.  **Data Extraction (Connectors):** The worker picks up the job. The appropriate Connector (e.g., `GoogleAdsConnector`) authenticates, queries the external API, and writes the raw data to the database.
+6.  **Processing (Services):** If a report is requested, the `ReportGenerator` reads the raw data, uses `Calculator` services to derive metrics (ROAS, CTR, etc.), and structures the final report.
+7.  **Completion:** The job status is updated in the database. The Frontend polls the API until the status is 'ready', then fetches the final report data.
+
+## 💾 Data Model Highlights
+
+*   **`Client`:** Stores core client metadata and connection pointers.
+*   **`Connection`:** Stores credentials and source type for a specific client.
+*   **`PullJob`:** Tracks the status and scope of any data extraction job.
+*   **`Report`:** Stores metadata about a generated report (period, type, status).
+*   **Raw Data Tables (e.g., `google_ads_campaign`, `meta_campaign`):** Store the raw, unaggregated data pulled from external sources.
+*   **`ReportSection`:** Stores the structured, aggregated data for a specific part of a report.
