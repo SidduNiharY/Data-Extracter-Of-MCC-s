@@ -60,6 +60,7 @@ export interface KpiTargets {
 export interface ReportSettings {
   kpi_targets?: KpiTargets;
   enabled_sections?: string[];
+  threshold_overrides?: Record<string, ThresholdOverride>;
 }
 
 // Analytics Types — all metrics from PDF spec
@@ -225,4 +226,45 @@ export interface ReportProgressRow {
   status: string;
   generated_at: string | null;
   metrics: ReportMetric[];
+}
+
+// ── Performance Dashboard ──
+
+export interface DashboardRow {
+  client_id: string;
+  client_name: string;
+  priority: number | null;
+  connected_sources: DataSource[];
+
+  // Google Ads
+  impressions: number | null;
+  clicks: number | null;
+  cost: number | null;
+  cpc: number | null;
+
+  // Cross-platform
+  orders: number | null;
+  revenue: number | null;
+  rc_ratio: number | null;
+
+  // Shopify
+  shopify_orders: number | null;
+  shopify_revenue: number | null;
+  shopify_roas: number | null;
+
+  // GA4
+  ga4_orders: number | null;
+  ga4_revenue: number | null;
+  ga4_roas: number | null;
+}
+
+export interface ThresholdConfig {
+  metric_name: string;
+  red_below: number | null;
+  green_above: number | null;
+}
+
+export interface ThresholdOverride {
+  red_below: number | null;
+  green_above: number | null;
 }
