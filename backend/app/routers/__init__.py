@@ -6,6 +6,7 @@ from .meta_ads import router as meta_ads_router
 from .shopify import router as shopify_router
 from .ga4 import router as ga4_router
 from .reports import router as reports_router
+from .dashboard import router as dashboard_router
 
 __all__ = [
     "clients_router",
@@ -15,4 +16,5 @@ __all__ = [
     "shopify_router",
     "ga4_router",
     "reports_router",
+    "dashboard_router",
 ]

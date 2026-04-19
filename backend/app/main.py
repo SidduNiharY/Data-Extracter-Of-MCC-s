@@ -12,6 +12,7 @@ from app.routers import (
     ga4_router,
     reports_router,
     manual_entry,
+    dashboard_router,
 )
 from app.scheduler import lifespan
 
@@ -39,6 +40,7 @@ app.include_router(shopify_router, prefix="/api/data/shopify", tags=["Shopify"])
 app.include_router(ga4_router, prefix="/api/data/ga4", tags=["GA4"])
 app.include_router(reports_router, prefix="/api/reports", tags=["Reports"])
 app.include_router(manual_entry.router, prefix="/api/manual-entry", tags=["Manual Entry"])
+app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 
 
 @app.get("/api/health")
