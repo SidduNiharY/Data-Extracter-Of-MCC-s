@@ -17,6 +17,7 @@ from app.models.shopify import ShopifyOrder, ShopifyProduct
 from app.models.ga4 import GA4Revenue, GA4ChannelBreakdown, GA4DeviceBreakdown
 from app.models.reports import Report, ReportSection
 from app.models.report_metrics import ReportMetric
+from app.models.dashboard import DashboardThreshold
 
 __all__ = [
     "Client",
@@ -39,4 +40,5 @@ __all__ = [
     "Report",
     "ReportSection",
     "ReportMetric",
+    "DashboardThreshold",
 ]
