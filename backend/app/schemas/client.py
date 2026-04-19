@@ -59,6 +59,7 @@ class ClientUpdate(BaseModel):
     timezone: Optional[str] = None
     report_settings: Optional[dict] = None
     is_active: Optional[bool] = None
+    priority: Optional[int] = None
 
 
 class ClientRead(BaseModel):
@@ -74,6 +75,7 @@ class ClientRead(BaseModel):
     timezone: str
     report_settings: Optional[dict]
     is_active: bool
+    priority: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 
