@@ -7,7 +7,13 @@ import uuid
 
 from app.database import get_db
 from app.models.client import Client
+from app.models.dashboard import DashboardThreshold
 from app.schemas.client import ClientRead
+from app.schemas.dashboard import (
+    ThresholdConfig,
+    ClientThresholdOverrideUpdate,
+    PriorityUpdate,
+)
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -329,3 +335,74 @@ async def connect_data_source(
     await db.commit()
     return {"status": "connected", "client_id": str(client_id), "source": req.source}
 
+
+
+# ── Priority ─────────────────────────────────────────────────────
+
+
+@router.patch("/{client_id}/priority", response_model=ClientRead)
+async def update_client_priority(
+    client_id: uuid.UUID,
+    payload: PriorityUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    client.priority = payload.priority
+    await db.commit()
+    await db.refresh(client)
+    return client
+
+
+# ── Per-Client Threshold Overrides ──────────────────────────────
+
+
+@router.get("/{client_id}/thresholds", response_model=list[ThresholdConfig])
+async def get_client_thresholds(
+    client_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return merged thresholds: global defaults overlaid with per-client overrides."""
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    gres = await db.execute(select(DashboardThreshold).order_by(DashboardThreshold.metric_name))
+    globals_map = {g.metric_name: g for g in gres.scalars().all()}
+
+    overrides = (client.report_settings or {}).get("threshold_overrides") or {}
+
+    merged: list[ThresholdConfig] = []
+    for metric_name, g in globals_map.items():
+        ov = overrides.get(metric_name) or {}
+        merged.append(ThresholdConfig(
+            metric_name=metric_name,
+            red_below=ov.get("red_below", float(g.red_below) if g.red_below is not None else None),
+            green_above=ov.get("green_above", float(g.green_above) if g.green_above is not None else None),
+        ))
+    return merged
+
+
+@router.patch("/{client_id}/thresholds", response_model=ClientRead)
+async def save_client_threshold_overrides(
+    client_id: uuid.UUID,
+    payload: ClientThresholdOverrideUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """Replace the full threshold_overrides dict on the client."""
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    settings = dict(client.report_settings or {})
+    settings["threshold_overrides"] = {
+        metric: ov.model_dump() for metric, ov in payload.overrides.items()
+    }
+    client.report_settings = settings
+    await db.commit()
+    await db.refresh(client)
+    return client
