@@ -1,13 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Activity, FileBarChart, Settings, Zap, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, FileBarChart, Settings, Zap, TrendingUp, BarChart3 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   const links = [
     { name: 'Overview', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Pull Jobs', href: '/pulls', icon: Activity },
     { name: 'Reports', href: '/reports', icon: FileBarChart },
