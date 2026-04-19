@@ -4,6 +4,7 @@ import PlatformConnector from '@/components/PlatformConnector';
 import ReportParametersEditor from '@/components/ReportParametersEditor';
 import ClientActionsBar from '@/components/ClientActionsBar';
 import ClientDetailContent from '@/components/ClientDetailContent';
+import ClientThresholdOverridesSection from '@/components/dashboard/ClientThresholdOverridesSection';
 import { revalidatePath } from 'next/cache';
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
@@ -61,6 +62,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </header>
 
       <ClientDetailContent client={client} metrics={metrics} jobs={jobs} onRefresh={handleRefresh} />
+
+      <ClientThresholdOverridesSection
+        clientId={client.id}
+        initialOverrides={client.report_settings?.threshold_overrides ?? {}}
+      />
     </div>
   );
 }
