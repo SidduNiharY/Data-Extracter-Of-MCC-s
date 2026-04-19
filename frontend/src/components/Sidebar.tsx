@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Activity, FileBarChart, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, FileBarChart, Settings, Zap, TrendingUp } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -11,7 +11,8 @@ export default function Sidebar() {
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Pull Jobs', href: '/pulls', icon: Activity },
     { name: 'Reports', href: '/reports', icon: FileBarChart },
-    { name: 'Settings', href: '#', icon: Settings },
+    { name: 'Progress', href: '/reports/progress', icon: TrendingUp },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (
@@ -50,7 +51,7 @@ export default function Sidebar() {
         </div>
         {links.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/');
+          const isActive = pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/');
           
           return (
             <Link key={link.name} href={link.href} style={{

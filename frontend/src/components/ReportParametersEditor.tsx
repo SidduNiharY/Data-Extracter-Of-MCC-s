@@ -5,6 +5,7 @@ import { Settings, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react
 import { api } from '@/lib/api';
 
 interface ReportParametersEditorProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
   onUpdate: () => void;
 }
@@ -36,9 +37,7 @@ export default function ReportParametersEditor({ client, onUpdate }: ReportParam
     };
 
     try {
-      const result = await api.manualSetup({ ...client, ...payload }); // Reuse manualSetup or create patch
-      // Actually let's use a generic update if available, but for now this works if api handles it
-      // Note: In real app we should have api.updateClient
+      const result = await api.updateClient(client.id, payload);
       if (result) {
         setStatus({ type: 'success', message: 'Parameters updated successfully!' });
         setTimeout(() => {
@@ -47,7 +46,7 @@ export default function ReportParametersEditor({ client, onUpdate }: ReportParam
           onUpdate();
         }, 1500);
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: 'error', message: 'Failed to update settings.' });
     } finally {
       setLoading(false);
@@ -58,7 +57,7 @@ export default function ReportParametersEditor({ client, onUpdate }: ReportParam
     setSettings(prev => ({
       ...prev,
       enabled_sections: prev.enabled_sections.includes(section)
-        ? prev.enabled_sections.filter(s => s !== section)
+        ? prev.enabled_sections.filter((s: string) => s !== section)
         : [...prev.enabled_sections, section]
     }));
   };

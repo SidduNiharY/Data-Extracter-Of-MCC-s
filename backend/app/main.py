@@ -3,7 +3,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import clients, pulls, google_ads, meta_ads, shopify, ga4, reports, manual_entry
+from app.routers import (
+    clients_router,
+    pulls_router,
+    google_ads_router,
+    meta_ads_router,
+    shopify_router,
+    ga4_router,
+    reports_router,
+    manual_entry,
+)
 from app.scheduler import lifespan
 
 app = FastAPI(
@@ -22,13 +31,13 @@ app.add_middleware(
 )
 
 # Register routers
-app.include_router(clients.router, prefix="/api/clients", tags=["Clients"])
-app.include_router(pulls.router, prefix="/api/pulls", tags=["Pull Jobs"])
-app.include_router(google_ads.router, prefix="/api/data/google-ads", tags=["Google Ads"])
-app.include_router(meta_ads.router, prefix="/api/data/meta", tags=["Meta Ads"])
-app.include_router(shopify.router, prefix="/api/data/shopify", tags=["Shopify"])
-app.include_router(ga4.router, prefix="/api/data/ga4", tags=["GA4"])
-app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
+app.include_router(clients_router, prefix="/api/clients", tags=["Clients"])
+app.include_router(pulls_router, prefix="/api/pulls", tags=["Pull Jobs"])
+app.include_router(google_ads_router, prefix="/api/data/google-ads", tags=["Google Ads"])
+app.include_router(meta_ads_router, prefix="/api/data/meta", tags=["Meta Ads"])
+app.include_router(shopify_router, prefix="/api/data/shopify", tags=["Shopify"])
+app.include_router(ga4_router, prefix="/api/data/ga4", tags=["GA4"])
+app.include_router(reports_router, prefix="/api/reports", tags=["Reports"])
 app.include_router(manual_entry.router, prefix="/api/manual-entry", tags=["Manual Entry"])
 
 

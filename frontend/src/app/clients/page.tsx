@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 import ClientCard from '@/components/ClientCard';
 import Link from 'next/link';
-import { Plus, Smartphone, Store, Upload, Users } from 'lucide-react';
+import { Smartphone, Store, Upload, Users, PlusCircle } from 'lucide-react';
 
 export default async function ClientsPage() {
   const clients = await api.getClients();
@@ -17,18 +17,18 @@ export default async function ClientsPage() {
             {activeCount} active client{activeCount !== 1 ? 's' : ''} across {clients.length} total accounts.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-          <Link href="/clients/manual-setup" className="btn btn-ghost" style={{ border: '1px solid var(--surface-border)' }}>
-            <Plus size={18} /> Manual Setup
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          <Link href="/clients/new" className="btn btn-primary">
+            <PlusCircle size={18} /> Create Account
           </Link>
           <Link href="/clients/mcc-import" className="btn btn-secondary">
-            <Users size={18} /> Import MCC
+            <Users size={18} /> Import Google MCC
           </Link>
           <Link href="/clients/meta-import" className="btn btn-secondary">
-            <Smartphone size={18} /> Meta Ads
+            <Smartphone size={18} /> Import Meta Ads
           </Link>
           <Link href="/clients/shopify-import" className="btn btn-secondary">
-            <Store size={18} /> Shopify Store
+            <Store size={18} /> Import Shopify
           </Link>
         </div>
       </header>

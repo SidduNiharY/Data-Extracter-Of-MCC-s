@@ -1,5 +1,6 @@
 'use client';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import React from 'react';
 
 interface KPICardProps {
   label: string;
@@ -19,7 +20,7 @@ export default function KPICard({ label, value, change, prefix = '', suffix = ''
   const _isNeutral = changeNum === null || changeNum === 0;
 
   return (
-    <div className="stat-card" style={{ position: 'relative' }}>
+    <div className="stat-card" style={{ position: 'relative', padding: 'var(--space-4)', background: 'var(--surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--surface-border)' }}>
       {/* Accent glow */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 2,
@@ -28,8 +29,8 @@ export default function KPICard({ label, value, change, prefix = '', suffix = ''
         opacity: 0.7
       }} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-        <span className="stat-card-label">{label}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-2)' }}>
+        <span className="stat-card-label" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{label}</span>
         {icon && (
           <div style={{
             width: 32, height: 32, borderRadius: 'var(--radius-md)',
@@ -41,7 +42,7 @@ export default function KPICard({ label, value, change, prefix = '', suffix = ''
         )}
       </div>
 
-      <div className="stat-card-value" style={{ marginBottom: 'var(--space-2)' }}>
+      <div className="stat-card-value" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
         {prefix}{value}{suffix}
       </div>
 
@@ -50,7 +51,7 @@ export default function KPICard({ label, value, change, prefix = '', suffix = ''
           display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
           padding: '0.2rem 0.5rem',
           borderRadius: 'var(--radius-full)',
-          fontSize: '0.75rem', fontWeight: 600,
+          fontSize: '0.875rem', fontWeight: 600,
           background: isPositive ? 'var(--status-success-bg)' : isNegative ? 'var(--status-error-bg)' : 'rgba(255,255,255,0.05)',
           color: isPositive ? 'var(--status-success)' : isNegative ? 'var(--status-error)' : 'var(--text-muted)',
         }}>

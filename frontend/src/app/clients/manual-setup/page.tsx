@@ -8,7 +8,6 @@ import {
   ArrowRight, 
   Check, 
   Settings, 
-  Plus, 
   ShoppingCart, 
   Users, 
   BarChart2, 
@@ -82,6 +81,7 @@ export default function ManualSetupPage() {
       } else {
         setError("Failed to create client. Please check your IDs.");
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.detail || "An unexpected error occurred.");
     } finally {

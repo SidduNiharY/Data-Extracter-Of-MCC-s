@@ -76,3 +76,34 @@ class GenerateReportRequest(BaseModel):
     period_end: Optional[date] = None
     year: Optional[int] = None
     month: Optional[int] = None
+
+
+# ── Report Metrics ──
+
+
+class ReportMetricRead(BaseModel):
+    id: UUID
+    report_id: UUID
+    client_id: UUID
+    source: str
+    metric_name: str
+    current_value: Optional[float]
+    previous_value: Optional[float]
+    change_pct: Optional[float]
+    direction: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReportProgressRow(BaseModel):
+    """One row in the progress table: a single report period with its metrics."""
+    report_id: UUID
+    report_type: str
+    period_start: date
+    period_end: date
+    status: str
+    generated_at: Optional[datetime]
+    metrics: list[ReportMetricRead] = []
+
+    model_config = {"from_attributes": True}

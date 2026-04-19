@@ -13,9 +13,24 @@ from pydantic import BaseModel
 router = APIRouter()
 
 @router.get("", response_model=list[ClientRead])
-async def get_clients(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Client))
+async def get_clients(
+    mcc_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(Client)
+    if mcc_id:
+        stmt = stmt.where(Client.mcc_id == mcc_id)
+    result = await db.execute(stmt)
     return result.scalars().all()
+
+
+@router.get("/mccs", response_model=list[str])
+async def list_mcc_ids(db: AsyncSession = Depends(get_db)):
+    """Return distinct, non-null MCC IDs across all clients."""
+    result = await db.execute(
+        select(Client.mcc_id).where(Client.mcc_id.isnot(None)).distinct()
+    )
+    return [row[0] for row in result.all() if row[0]]
 
 @router.get("/{client_id}", response_model=ClientRead)
 async def get_client(client_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
@@ -28,6 +43,7 @@ async def get_client(client_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 class MCCImportRequest(BaseModel):
     customer_id: str
     name: str
+    mcc_id: Optional[str] = None  # Manager (MCC) account that owns this customer
 
 @router.post("/import-mcc", response_model=ClientRead)
 async def import_mcc_account(req: MCCImportRequest, db: AsyncSession = Depends(get_db)):
@@ -35,13 +51,15 @@ async def import_mcc_account(req: MCCImportRequest, db: AsyncSession = Depends(g
     result = await db.execute(select(Client).where(Client.google_ads_customer_id == req.customer_id))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="This Google Ads account is already imported.")
-    
+
     # Check if a client with this name exists manually created without google ads
     result_name = await db.execute(select(Client).where(Client.name == req.name))
     existing_client = result_name.scalar_one_or_none()
-    
+
     if existing_client:
         existing_client.google_ads_customer_id = req.customer_id
+        if req.mcc_id:
+            existing_client.mcc_id = req.mcc_id
         # Upgrade type to allow multiple platforms so we don't get the error
         if existing_client.type == "meta_only":
             existing_client.type = "google_meta"
@@ -50,10 +68,11 @@ async def import_mcc_account(req: MCCImportRequest, db: AsyncSession = Depends(g
         client = Client(
             name=req.name,
             type="google_only",
-            google_ads_customer_id=req.customer_id
+            google_ads_customer_id=req.customer_id,
+            mcc_id=req.mcc_id,
         )
         db.add(client)
-        
+
     await db.commit()
     await db.refresh(client)
     return client
@@ -142,6 +161,7 @@ class ManualSetupRequest(BaseModel):
     name: str
     type: str # e.g. google_only, ecomm_shopify, etc.
     google_ads_id: Optional[str] = None
+    mcc_id: Optional[str] = None
     meta_ads_id: Optional[str] = None
     shopify_url: Optional[str] = None
     ga4_id: Optional[str] = None
@@ -152,16 +172,14 @@ class ManualSetupRequest(BaseModel):
 @router.post("/manual-setup", response_model=ClientRead)
 async def manual_setup_account(req: ManualSetupRequest, db: AsyncSession = Depends(get_db)):
     """Manually create a client and link platform IDs without discovery."""
-    
-    # Check if a client with this name already exists
     result = await db.execute(select(Client).where(Client.name == req.name))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="A client with this name already exists.")
-    
     client = Client(
         name=req.name,
         type=req.type,
         google_ads_customer_id=req.google_ads_id,
+        mcc_id=req.mcc_id,
         meta_ad_account_id=req.meta_ads_id,
         shopify_shop_domain=req.shopify_url,
         ga4_property_id=req.ga4_id,
@@ -172,8 +190,88 @@ async def manual_setup_account(req: ManualSetupRequest, db: AsyncSession = Depen
     db.add(client)
     await db.commit()
     await db.refresh(client)
-    
     return client
+
+
+# ── New unified create endpoint ───────────────────────────────────────────────
+
+class ClientCreateRequest(BaseModel):
+    name: str
+    platforms: list[str]              # ["google_ads", "meta_ads", "shopify", "ga4"]
+    is_leadgen: bool = False
+    google_ads_customer_id: Optional[str] = None
+    mcc_id:                 Optional[str] = None
+    meta_ad_account_id:     Optional[str] = None
+    shopify_shop_domain:    Optional[str] = None
+    ga4_property_id:        Optional[str] = None
+    currency: str = "USD"
+    timezone: str = "UTC"
+
+
+@router.post("/create", response_model=ClientRead)
+async def create_client(req: ClientCreateRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Create a client by selecting platforms — client type is auto-derived.
+    Works for both API-pull and CSV-upload workflows.
+    """
+    from app.services.csv_templates import derive_client_type
+
+    # Duplicate name check
+    result = await db.execute(select(Client).where(Client.name == req.name))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400,
+                            detail=f"A client named '{req.name}' already exists.")
+
+    client_type = derive_client_type(req.platforms, req.is_leadgen)
+
+    client = Client(
+        name=req.name,
+        type=client_type,
+        google_ads_customer_id=req.google_ads_customer_id or None,
+        mcc_id=req.mcc_id or None,
+        meta_ad_account_id=req.meta_ad_account_id or None,
+        shopify_shop_domain=req.shopify_shop_domain or None,
+        ga4_property_id=req.ga4_property_id or None,
+        currency=req.currency,
+        timezone=req.timezone,
+    )
+    db.add(client)
+    await db.commit()
+    await db.refresh(client)
+    return client
+
+class ClientUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    currency: Optional[str] = None
+    timezone: Optional[str] = None
+    google_ads_customer_id: Optional[str] = None
+    mcc_id: Optional[str] = None
+    meta_ad_account_id: Optional[str] = None
+    shopify_shop_domain: Optional[str] = None
+    ga4_property_id: Optional[str] = None
+    report_settings: Optional[dict] = None
+    is_active: Optional[bool] = None
+
+
+@router.patch("/{client_id}", response_model=ClientRead)
+async def update_client(
+    client_id: uuid.UUID,
+    req: ClientUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Partial update — only fields provided in the body are changed."""
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client = result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    for field, value in req.model_dump(exclude_none=True).items():
+        setattr(client, field, value)
+
+    await db.commit()
+    await db.refresh(client)
+    return client
+
 
 class ConnectRequest(BaseModel):
     source: str       # google_ads | meta_ads | shopify | ga4

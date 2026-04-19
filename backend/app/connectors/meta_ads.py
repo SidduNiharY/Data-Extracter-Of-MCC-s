@@ -153,7 +153,7 @@ class MetaAdsConnector:
             form_completion = (leads / form_opens * 100) if (leads and form_opens and form_opens > 0) else None
 
             results.append({
-                "report_date": str(date.today()),
+                "report_date": report_date,
                 "campaign_id": row.get("campaign_id"),
                 "campaign_name": row.get("campaign_name"),
                 "leads": leads,

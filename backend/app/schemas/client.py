@@ -38,6 +38,7 @@ class ClientCreate(BaseModel):
     name: str
     type: ClientType
     google_ads_customer_id: Optional[str] = None
+    mcc_id: Optional[str] = None
     meta_ad_account_id: Optional[str] = None
     shopify_shop_domain: Optional[str] = None
     ga4_property_id: Optional[str] = None
@@ -50,6 +51,7 @@ class ClientUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[ClientType] = None
     google_ads_customer_id: Optional[str] = None
+    mcc_id: Optional[str] = None
     meta_ad_account_id: Optional[str] = None
     shopify_shop_domain: Optional[str] = None
     ga4_property_id: Optional[str] = None
@@ -64,6 +66,7 @@ class ClientRead(BaseModel):
     name: str
     type: ClientType
     google_ads_customer_id: Optional[str]
+    mcc_id: Optional[str] = None
     meta_ad_account_id: Optional[str]
     shopify_shop_domain: Optional[str]
     ga4_property_id: Optional[str]

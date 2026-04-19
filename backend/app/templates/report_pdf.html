@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Ads Performance Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #111827;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            margin: 0 auto;
+            background: white;
+            padding-bottom: 2rem;
+            position: relative;
+        }
+
+        /* --- Header Section --- */
+        .header {
+            background-color: #0d2946;
+            color: white;
+            padding: 40px 40px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .agency-name {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            background-color: #1d4ed8;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .report-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .client-subtitle {
+            font-size: 16px;
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        .date-info {
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .date-range {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #f8fafc;
+        }
+
+        .sent-date {
+            color: #94a3b8;
+        }
+
+        /* --- Main Content Area --- */
+        .content {
+            padding: 0 40px;
+        }
+
+        /* --- KPIs --- */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding-bottom: 24px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .kpi-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 40px;
+        }
+
+        .kpi-box {
+            padding: 0 10px;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .kpi-box:nth-child(4n) {
+            border-right: none;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        .kpi-growth {
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .growth-up {
+            color: #059669;
+        }
+
+        .growth-down {
+            color: #dc2626;
+        }
+
+        .arrow-up::before {
+            content: '▲';
+            margin-right: 4px;
+            font-size: 9px;
+        }
+
+        .arrow-down::before {
+            content: '▼';
+            margin-right: 4px;
+            font-size: 9px;
+        }
+
+        /* --- Sections common --- */
+        .section-header {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Table --- */
+        .table-section {
+            margin-bottom: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 8px;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+        }
+
+        tr:last-child td {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th:first-child,
+        td:first-child {
+            width: 40px;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        th:nth-child(2),
+        td:nth-child(2) {
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .score-bar {
+            height: 6px;
+            background-color: #2563eb;
+            border-radius: 3px;
+        }
+
+        .score-bg {
+            width: 60px;
+            height: 6px;
+            background-color: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        /* --- Audience & Timing --- */
+        .graphs-section {
+            margin-bottom: 40px;
+        }
+
+        .graphs-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .graph-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .graph-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        /* Chart rendering area */
+        .chart-wrapper {
+            position: relative;
+            height: 180px;
+            width: 100%;
+        }
+
+        .highlight-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: #0f172a;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        .sub-highlight {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* --- Insights --- */
+        .insights-section {
+            margin-bottom: 20px;
+        }
+
+        .insights-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .insights-header {
+            background-color: #0d2946;
+            color: white;
+            padding: 12px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .insights-content {
+            padding: 24px 20px;
+            background-color: white;
+        }
+
+        .insight-item {
+            display: flex;
+            margin-bottom: 24px;
+        }
+
+        .insight-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-number {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-right: 20px;
+            line-height: 1.2;
+        }
+
+        .insight-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+
+        .insight-text strong {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            margin-top: 40px;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .footer-dot {
+            color: #2563eb;
+            margin-right: 6px;
+            font-size: 14px;
+        }
+
+        @media print {
+            .page {
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+            }
+
+            .header {
+                border-radius: 0;
+            }
+        }
+
+        /* Helper to format integers / k / M */
+        .format-k {
+            /* handled via jinja ideally or just raw */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+        <div class="header">
+            <div class="header-top">
+                <div class="agency-name">Apex Digital Agency</div>
+                <div class="badge">{{ report_type | capitalize }} Report</div>
+            </div>
+            <div class="header-main">
+                <div>
+                    <h1 class="report-title">Google Ads Performance</h1>
+                    <div class="client-subtitle">{{ client_name }} — {{ report_type | capitalize }} Report</div>
+                </div>
+                <div class="date-info">
+                    <div class="date-range">{{ report_period_dates }}</div>
+                    <div class="sent-date">Sent {{ generated_date_str }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- KPIs -->
+            <div class="kpi-row">
+                <div class="kpi-box">
+                    <div class="kpi-label">Total Spend</div>
+                    <div class="kpi-value">{{ kpis.spend }}</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if (growth.get('spend_growth', 0)|float < 0) else 'growth-down arrow-down' }}">
+                        {{ growth.get('spend_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">Impressions</div>
+                    <div class="kpi-value">{{ kpis.impressions }}</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('impressions_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('impressions_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">Clicks</div>
+                    <div class="kpi-value">{{ kpis.clicks }}</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('clicks_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('clicks_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">Conversions</div>
+                    <div class="kpi-value">{{ kpis.conversions }}</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('conversions_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('conversions_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-row">
+                <div class="kpi-box">
+                    <div class="kpi-label">ROAS</div>
+                    <div class="kpi-value">{{ kpis.roas }}x</div>
+                    <div class="kpi-growth {{ 'growth-up arrow-up' if growth.get('roas_growth', 0)|float > 0 else ('growth-down arrow-down' if growth.get('roas_growth', 0)|float < 0 else '') }}"
+                        style="{% if growth.get('roas_growth', 0)|float == 0 %}color: #64748b;{% endif %}">
+                        {{ growth.get('roas_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">CTR</div>
+                    <div class="kpi-value">{{ kpis.ctr }}%</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('ctr_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('ctr_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">Avg. CPC</div>
+                    <div class="kpi-value">{{ kpis.cpc }}</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('cpc_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('cpc_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+                <div class="kpi-box">
+                    <div class="kpi-label">Conv. Rate</div>
+                    <div class="kpi-value">{{ kpis.conv_rate }}%</div>
+                    <div
+                        class="kpi-growth {{ 'growth-up arrow-up' if growth.get('conversion_rate_growth', 0)|float >= 0 else 'growth-down arrow-down' }}">
+                        {{ growth.get('conversion_rate_growth', 0)|float|abs }}%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Campaigns Table -->
+            <div class="table-section">
+                <div class="section-header">Top Campaigns</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Campaign Name</th>
+                            <th>Impressions</th>
+                            <th>Clicks</th>
+                            <th>CTR</th>
+                            <th>Conv.</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for camp in campaigns[:5] %}
+                        <tr>
+                            {% set ns = namespace(score_width=0) %}
+                            {% if camp.ctr and camp.ctr != "0" %}
+                            {% set ctr_val = camp.ctr|float %}
+                            {% set ns.score_width = (ctr_val / 15 * 60) %}
+                            {% if ns.score_width > 60 %}{% set ns.score_width = 60 %}{% endif %}
+                            {% endif %}
+
+                            <td>{{ "%02d" | format(loop.index) }}</td>
+                            <td>{{ camp.campaign_name|truncate(40, true) }}</td>
+                            <td>{{ camp.impressions }}</td>
+                            <td>{{ camp.clicks }}</td>
+                            <td>{{ camp.ctr }}%</td>
+                            <td>{{ camp.conversions }}</td>
+                            <td>
+                                <div class="score-bg">
+                                    <div class="score-bar"
+                                        style="width: {{ ns.score_width }}px; {% if ns.score_width < 25 %}background-color: #93c5fd;{% endif %}">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-section">
+                <div class="section-header">Channel Breakdown</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Channel Type</th>
+                            <th>Match/Type</th>
+                            <th>Spend</th>
+                            <th>CTR</th>
+                            <th>ROAS</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ml in mix_labels %}
+                        <tr>
+                            {% set ns = namespace(score_width=0, percent=0) %}
+                            {% set total_mix = mix_values | sum %}
+                            {% if total_mix > 0 %}
+                            {% set ns.percent = (mix_values[loop.index0] / total_mix * 100)|round %}
+                            {% set ns.score_width = (ns.percent / 100 * 60) %}
+                            {% endif %}
+
+                            <td>{{ "%02d" | format(loop.index) }}</td>
+                            <td>{{ ml }}</td>
+                            <td>Broad</td>
+                            <td>${{ mix_values[loop.index0] | round(2) }}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>
+                                <div class="score-bg">
+                                    <div class="score-bar" style="width: {{ ns.score_width }}px;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+
+            <!-- Graphs -->
+            <div class="graphs-section">
+                <div class="section-header">Audience & Timing Analysis</div>
+                <div class="graphs-container">
+                    <div class="graph-box">
+                        <div class="graph-title">Day of Week — Clicks</div>
+                        <div class="chart-wrapper">
+                            <canvas id="dowChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="graph-box">
+                        <div class="graph-title">Channel Split — Strategy</div>
+                        <div class="chart-wrapper">
+                            <canvas id="mixChart"></canvas>
+                        </div>
+                        <div style="margin-top:20px;">
+                            <div class="graph-title" style="margin-bottom: 8px;">Overall Insight</div>
+                            <div class="highlight-text">{{ best_day | default('Mid-Week') }} Performance</div>
+                            <div class="sub-highlight">Observe highest engagement.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <div class="insights-section">
+                <div class="section-header">Strategic Insights</div>
+                <div class="insights-box">
+                    <div class="insights-header">Analyst Commentary — Google Ads</div>
+                    <div class="insights-content">
+                        {% for insight in insights.positive %}
+                        <div class="insight-item">
+                            <div class="insight-number">0{{ loop.index }}</div>
+                            <div class="insight-text">{{ insight }}</div>
+                        </div>
+                        {% endfor %}
+                        {% for insight in insights.negative %}
+                        <div class="insight-item">
+                            <div class="insight-number">0{{ loop.index + insights.positive|length }}</div>
+                            <div class="insight-text">{{ insight }}</div>
+                        </div>
+                        {% endfor %}
+
+                        {% if not insights.positive and not insights.negative %}
+                        <div class="insight-item">
+                            <div class="insight-number">01</div>
+                            <div class="insight-text">Account is maintaining stable baseline performance across core
+                                channels. Further optimization is pending statistical significance.</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>Apex Digital Agency</div>
+            <div><span class="footer-dot">•</span> Next report: {{ next_report_date | default('Next Period') }}</div>
+        </div>
+    </div>
+
+    <script>
+        // DOW Chart (Horizontal Bar)
+        const dowCtx = document.getElementById('dowChart').getContext('2d');
+
+        // We will inject labels and data from backend, default fallback if none
+        const rawLabels = {{ trend_labels | tojson }};
+        const rawData = {{ trend_clicks | tojson }};
+
+        // Map to days if it's dates, or just use labels
+        const labels = rawLabels.length ? rawLabels : ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+        const data = rawData.length ? rawData : [480, 600, 760, 680, 544, 336, 224];
+
+        // Find max for 'Peak' highlighting
+        const maxVal = Math.max(...data);
+        const bgColors = data.map(v => v === maxVal ? '#0f172a' : '#3b82f6');
+        const borderColors = bgColors;
+
+        new Chart(dowCtx, {
+            type: 'bar',
+            data: {
+                labels: labels.map(l => {
+                    // simple format if it is a date
+                    const d = new Date(l);
+                    if (!isNaN(d.valueOf()) && l.includes('-')) {
+                        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+                        return days[d.getDay()];
+                    }
+                    return l;
+                }),
+                datasets: [{
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderRadius: 4,
+                    barThickness: 12
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        display: false,
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { family: 'Inter', size: 10, weight: 600 },
+                            color: '#64748b'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Mix Chart (Horizontal Stacked or normal bar, let's just do horizontal bar)
+        const mixCtx = document.getElementById('mixChart').getContext('2d');
+        new Chart(mixCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ mix_labels | tojson }},
+            datasets: [{
+                data: {{ mix_values | tojson }},
+            backgroundColor: ['#2563eb', '#93c5fd', '#e2e8f0', '#cbd5e1', '#94a3b8'],
+            borderRadius: 4,
+            barThickness: 12
+            }]
+        },
+            options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false, grid: { display: false } },
+                y: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: {
+                        font: { family: 'Inter', size: 10 },
+                        color: '#1e293b'
+                    }
+                }
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>

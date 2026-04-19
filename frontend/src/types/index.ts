@@ -15,12 +15,14 @@ export interface Client {
   name: string;
   type: ClientType;
   google_ads_customer_id: string | null;
+  mcc_id?: string | null;
   meta_ad_account_id: string | null;
   shopify_shop_domain: string | null;
   ga4_property_id: string | null;
   currency: string;
   timezone: string;
   is_active: boolean;
+  report_settings?: ReportSettings;
   created_at: string;
   updated_at: string;
 }
@@ -48,8 +50,21 @@ export interface PullJob {
   created_at: string;
 }
 
-// Analytics Types
+// ── KPI / Report Settings ──
+
+export interface KpiTargets {
+  roas?: number;
+  cpa?: number;
+}
+
+export interface ReportSettings {
+  kpi_targets?: KpiTargets;
+  enabled_sections?: string[];
+}
+
+// Analytics Types — all metrics from PDF spec
 export interface MetricSummary {
+  // Core
   impressions?: number;
   clicks?: number;
   spend?: number;
@@ -57,6 +72,23 @@ export interface MetricSummary {
   revenue?: number;
   orders?: number;
   sessions?: number;
+  // Derived
+  ctr?: number;
+  cpc?: number;
+  roas?: number;
+  conversion_rate?: number;
+  cost_per_conv?: number;
+  avg_order_value?: number;
+  // Meta-specific
+  reach?: number;
+  frequency?: number;
+  cpm?: number;
+  cost_per_result?: number;
+  // GA4-specific
+  active_users?: number;
+  purchase_revenue?: number;
+  transactions?: number;
+  session_conversion_rate?: number;
 }
 
 export interface PlatformMetrics {
@@ -125,4 +157,72 @@ export interface GenerateReportRequest {
   period_end?: string;
   year?: number;
   month?: number;
+}
+
+// ── Manual Account Creation ──
+
+export type Platform = 'google_ads' | 'meta_ads' | 'shopify' | 'ga4';
+
+export interface ClientCreateRequest {
+  name: string;
+  platforms: Platform[];
+  is_leadgen: boolean;
+  google_ads_customer_id?: string;
+  mcc_id?: string;
+  meta_ad_account_id?: string;
+  shopify_shop_domain?: string;
+  ga4_property_id?: string;
+  currency: string;
+  timezone: string;
+}
+
+export interface CsvColumnDef {
+  name: string;
+  dtype: string;
+  required: boolean;
+  allowed: string[] | null;
+}
+
+export interface CsvTemplateInfo {
+  source: string;
+  table: string;
+  label: string;
+  client_types: string[];
+  columns: CsvColumnDef[];
+}
+
+export interface CsvUploadResult {
+  status: string;
+  source: string;
+  table: string;
+  pull_job_id: string | null;
+  rows_processed: number;
+  rows_skipped?: number;   // rows ignored (totals rows, blank dates, etc.)
+  warnings?: string[];     // non-fatal parse warnings (e.g. clamped CTR)
+  message?: string;        // optional info message from server
+}
+
+// ── Report Metrics & Progress ──
+
+export interface ReportMetric {
+  id: string;
+  report_id: string;
+  client_id: string;
+  source: string;
+  metric_name: string;
+  current_value: number | null;
+  previous_value: number | null;
+  change_pct: number | null;
+  direction: 'up' | 'down' | 'flat' | null;
+  created_at: string;
+}
+
+export interface ReportProgressRow {
+  report_id: string;
+  report_type: 'weekly' | 'monthly';
+  period_start: string;
+  period_end: string;
+  status: string;
+  generated_at: string | null;
+  metrics: ReportMetric[];
 }

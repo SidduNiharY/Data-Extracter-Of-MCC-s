@@ -20,6 +20,9 @@ class Client(Base):
     # Allowed: google_only | meta_only | google_meta | ecomm_shopify | ecomm_ga4 | leadgen
 
     google_ads_customer_id: Mapped[Optional[str]] = mapped_column(String(20))
+    # MCC (Manager) account that owns the linked google_ads_customer_id, when applicable.
+    # Allows the same backend instance to manage clients across multiple MCCs.
+    mcc_id: Mapped[Optional[str]] = mapped_column(String(20))
     meta_ad_account_id: Mapped[Optional[str]] = mapped_column(String(50))
     shopify_shop_domain: Mapped[Optional[str]] = mapped_column(String(255))
     ga4_property_id: Mapped[Optional[str]] = mapped_column(String(50))
@@ -37,6 +40,7 @@ class Client(Base):
     __table_args__ = (
         Index("idx_clients_type", "type"),
         Index("idx_clients_active", "is_active"),
+        Index("idx_clients_mcc_id", "mcc_id"),
     )
 
 

@@ -19,6 +19,7 @@ export default function MetaImportPage() {
     try {
       const data = await api.getMetaAccounts();
       setAccounts(data.accounts);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error('Failed to load Meta accounts', e);
       setError(e.response?.data?.detail || 'Failed to connect to Meta API. Check your Access Token.');
@@ -44,6 +45,7 @@ export default function MetaImportPage() {
           )
         );
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error('Import failed', e);
       alert(e.response?.data?.detail || 'Import failed');

@@ -34,7 +34,7 @@ export default function MCCImportPage() {
   const handleImport = async (account: MCCAccount) => {
     setImportingId(account.customer_id);
     try {
-      const client = await api.importMccAccount(account.customer_id, account.name);
+      const client = await api.importMccAccount(account.customer_id, account.name, mccId || undefined);
       if (client) {
         setAccounts(prev =>
           prev.map(acc =>

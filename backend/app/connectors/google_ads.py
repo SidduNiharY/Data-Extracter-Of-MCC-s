@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import date
 from decimal import Decimal
+from typing import Optional
 import logging
 
 from google.ads.googleads.client import GoogleAdsClient
@@ -254,7 +255,7 @@ class GoogleAdsConnector:
         """Pull top 10 search terms by clicks — Search Campaign clients only.
 
         Maps to PDF: Google Ads — Search Terms
-        Filter: top 10 by clicks.
+        ROAS = Conv. Value ÷ Spend (calculated per row per spec, not pulled from API).
         """
         date_filter = self._date_filter(start_date, end_date)
         query = f"""
@@ -264,6 +265,7 @@ class GoogleAdsConnector:
                 metrics.clicks,
                 metrics.ctr,
                 metrics.average_cpc,
+                metrics.cost_micros,
                 metrics.conversions,
                 metrics.conversions_value,
                 segments.date
@@ -276,18 +278,23 @@ class GoogleAdsConnector:
         today = date.today()
         results = []
         for row in raw_rows:
+            spend      = self._micros_to_currency(row.metrics.cost_micros)
+            conv_value = (
+                Decimal(str(row.metrics.conversions_value))
+                if row.metrics.conversions_value else None
+            )
+            # ROAS = Conv. Value ÷ Spend (per spec — calculated, never pulled directly)
+            roas = (conv_value / spend) if (conv_value and spend and spend > 0) else None
             results.append({
                 "report_date": row.segments.date if hasattr(row.segments, "date") else str(today),
                 "search_term": row.search_term_view.search_term,
                 "impressions": row.metrics.impressions,
-                "clicks": row.metrics.clicks,
-                "ctr": (Decimal(str(row.metrics.ctr)) * 100) if row.metrics.ctr else None,
-                "avg_cpc": self._micros_to_currency(row.metrics.average_cpc),
+                "clicks":      row.metrics.clicks,
+                "ctr":         (Decimal(str(row.metrics.ctr)) * 100) if row.metrics.ctr else None,
+                "avg_cpc":     self._micros_to_currency(row.metrics.average_cpc),
                 "conversions": Decimal(str(row.metrics.conversions)),
-                "conv_value": (
-                    Decimal(str(row.metrics.conversions_value))
-                    if row.metrics.conversions_value else None
-                ),
+                "conv_value":  conv_value,
+                "roas":        roas,
             })
         return results
 

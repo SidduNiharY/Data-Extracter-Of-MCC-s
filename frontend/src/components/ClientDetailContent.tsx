@@ -1,12 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { History, Loader2 } from 'lucide-react';
 import MetricsTable from './MetricsTable';
 import PullJobStatus from './PullJobStatus';
 import ManualDataEntry from './ManualDataEntry';
+import { api } from '@/lib/api';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ClientDetailContent({ client, metrics, jobs, onRefresh }: any) {
   const [activeTab, setActiveTab] = useState('performance');
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillStatus, setBackfillStatus] = useState<string | null>(null);
+
+  async function handleBackfill() {
+    setBackfilling(true);
+    setBackfillStatus(null);
+    await api.backfillReports(client.id, 24, 6);
+    setBackfillStatus('Generating last 12 months + 6 weeks of reports in the background…');
+    setBackfilling(false);
+  }
 
   return (
     <>
@@ -46,6 +59,29 @@ export default function ClientDetailContent({ client, metrics, jobs, onRefresh }
             )}
           </section>
 
+          <section style={{ marginBottom: 'var(--space-8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+              <h2 className="heading-2" style={{ marginBottom: 0 }}>Reports</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                {backfillStatus && (
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--status-success)' }}>{backfillStatus}</span>
+                )}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleBackfill}
+                  disabled={backfilling}
+                  title="Generate last 12 months of monthly + last 6 weeks of weekly reports"
+                >
+                  {backfilling ? <Loader2 size={13} className="animate-spin" /> : <History size={13} />}
+                  Generate History
+                </button>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
+              Generates last 12 monthly + 6 weekly reports. Skips periods that already have a report.
+            </div>
+          </section>
+
           <section>
             <h2 className="heading-2" style={{ marginBottom: 'var(--space-6)' }}>Recent Data Pulls</h2>
             <div className="glass-panel" style={{ overflow: 'hidden' }}>
@@ -59,6 +95,7 @@ export default function ClientDetailContent({ client, metrics, jobs, onRefresh }
                   </tr>
                 </thead>
                 <tbody>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {jobs.map((job: any) => (
                     <tr key={job.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                       <td style={{ padding: 'var(--space-4)', textTransform: 'uppercase', fontSize: '0.875rem' }}>{job.source.replace('_', ' ')}</td>
@@ -75,7 +112,7 @@ export default function ClientDetailContent({ client, metrics, jobs, onRefresh }
       ) : (
         <section>
           <h2 className="heading-2" style={{ marginBottom: 'var(--space-6)' }}>Manual Data Ingestion</h2>
-          <ManualDataEntry clientId={client.id} onSuccess={onRefresh} />
+          <ManualDataEntry clientId={client.id} clientType={client.type} onSuccess={onRefresh} />
         </section>
       )}
     </>

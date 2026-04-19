@@ -1,4 +1,5 @@
 import { MetricSummary } from '@/types';
+import React from 'react';
 
 interface MetricsTableProps {
   title: string;
@@ -62,7 +63,7 @@ export default function MetricsTable({ title, data, currency = 'USD' }: MetricsT
   return (
     <div className="glass-panel" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
       <h3 style={{
-        fontSize: '1.0625rem', fontWeight: 600, marginBottom: 'var(--space-5)',
+        fontSize: '1.25rem', fontWeight: 700, marginBottom: 'var(--space-5)',
         paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--surface-border)',
       }}>
         {title}
@@ -70,23 +71,23 @@ export default function MetricsTable({ title, data, currency = 'USD' }: MetricsT
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
         gap: 'var(--space-4)',
       }}>
         {tiles.map(({ label, value, highlight }) => (
-          <div key={label}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 500 }}>
+          <div key={label} style={{ background: 'var(--surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)' }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: 500 }}>
               {label}
             </div>
             <div style={{
-              fontSize: '1.25rem', fontWeight: 700,
+              fontSize: '1.125rem', fontWeight: 700,
               color: highlight ?? 'var(--text-primary)',
             }}>
               {value}
             </div>
           </div>
         ))}
-      </div>
+      </div >
     </div>
   );
 }

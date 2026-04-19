@@ -46,6 +46,9 @@ class Report(Base):
     sections: Mapped[list["ReportSection"]] = relationship(
         back_populates="report", cascade="all, delete-orphan"
     )
+    metrics: Mapped[list["ReportMetric"]] = relationship(
+        "ReportMetric", back_populates="report", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         UniqueConstraint("client_id", "report_type", "period_start", name="uq_report_client_type_period"),

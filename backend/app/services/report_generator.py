@@ -21,6 +21,7 @@ from app.models.client import Client
 from app.models.reports import Report, ReportSection
 from app.models.google_ads import (
     GoogleAdsCampaign,
+    GoogleAdsCampaignRaw,
     GoogleAdsSearchTerm,
     GoogleAdsKeyword,
     GoogleAdsTimeSegment,
@@ -37,12 +38,14 @@ from app.models.ga4 import GA4Revenue, GA4ChannelBreakdown, GA4DeviceBreakdown
 
 from app.services.calculator import (
     safe_sum,
+    safe_avg,
     build_summary_with_derived,
     wow_growth,
     avg_order_value,
     cpl,
     form_completion_rate,
 )
+from app.services.metrics_extractor import MetricsExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -119,8 +122,10 @@ class ReportGenerator:
 
             sections = []
 
-            # Google Ads sections
-            if client.google_ads_customer_id:
+            # Google Ads sections — run if API customer_id is set OR CSV data was uploaded
+            if client.google_ads_customer_id or await self._has_raw_google_ads_data(
+                client.id, week_start, week_end
+            ):
                 sections.extend(
                     await self._google_ads_sections(client, report.id, week_start, week_end, prev_start, prev_end)
                 )
@@ -153,6 +158,11 @@ class ReportGenerator:
 
             report.status = "ready"
             report.generated_at = datetime.now(timezone.utc)
+
+            # Extract pre-computed metrics from summary sections
+            extractor = MetricsExtractor(self.db)
+            await extractor.extract_and_save(report.id)
+
             await self.db.commit()
             logger.info(
                 "Weekly report generated for %s (%s → %s): %d sections",
@@ -214,7 +224,10 @@ class ReportGenerator:
         try:
             sections = []
 
-            if client.google_ads_customer_id:
+            # Google Ads sections — run if API customer_id is set OR CSV data was uploaded
+            if client.google_ads_customer_id or await self._has_raw_google_ads_data(
+                client.id, month_start, month_end
+            ):
                 sections.extend(
                     await self._google_ads_sections(
                         client, report.id, month_start, month_end, prev_month_start, prev_month_end
@@ -253,6 +266,11 @@ class ReportGenerator:
 
             report.status = "ready"
             report.generated_at = datetime.now(timezone.utc)
+
+            # Extract pre-computed metrics from summary sections
+            extractor = MetricsExtractor(self.db)
+            await extractor.extract_and_save(report.id)
+
             await self.db.commit()
             logger.info(
                 "Monthly report generated for %s (%s → %s): %d sections",
@@ -294,7 +312,123 @@ class ReportGenerator:
                 logger.error("Monthly report failed for %s: %s", client.name, e)
         return report_ids
 
-    # ═══════════════════════════�    # ── Google Ads ───────────────────────────────────────────────────────
+    async def generate_backfill(
+        self,
+        client_id: uuid.UUID,
+        months: int = 12,
+        weeks: int = 6,
+    ) -> dict:
+        """Backfill historical reports: last `months` monthly + last `weeks` weekly.
+
+        Skips any period that already has a ready report so it is safe to
+        call multiple times.
+        """
+        today = date.today()
+        monthly_generated = 0
+        weekly_generated   = 0
+        monthly_skipped    = 0
+        weekly_skipped     = 0
+        errors: list[str]  = []
+
+        # ── Monthly: last N complete calendar months ──────────────────────
+        for i in range(1, months + 1):
+            year  = today.year
+            month = today.month - i
+            while month <= 0:
+                month += 12
+                year  -= 1
+
+            month_start = date(year, month, 1)
+
+            existing = await self.db.execute(
+                select(Report).where(
+                    and_(
+                        Report.client_id   == client_id,
+                        Report.report_type == "monthly",
+                        Report.period_start == month_start,
+                        Report.status      == "ready",
+                    )
+                )
+            )
+            if existing.scalar_one_or_none():
+                monthly_skipped += 1
+                continue
+
+            try:
+                await self.generate_monthly(client_id, year=year, month=month)
+                monthly_generated += 1
+            except Exception as e:
+                errors.append(f"Monthly {year}-{month:02d}: {str(e)[:120]}")
+
+        # ── Weekly: last N complete Mon–Sun weeks ─────────────────────────
+        # today.weekday(): Mon=0 … Sun=6
+        last_sunday = today - timedelta(days=today.weekday() + 1)
+        last_monday = last_sunday - timedelta(days=6)
+
+        for i in range(weeks):
+            week_start = last_monday - timedelta(weeks=i)
+            week_end   = last_sunday - timedelta(weeks=i)
+
+            existing = await self.db.execute(
+                select(Report).where(
+                    and_(
+                        Report.client_id    == client_id,
+                        Report.report_type  == "weekly",
+                        Report.period_start == week_start,
+                        Report.status       == "ready",
+                    )
+                )
+            )
+            if existing.scalar_one_or_none():
+                weekly_skipped += 1
+                continue
+
+            try:
+                await self.generate_weekly(client_id, week_start=week_start, week_end=week_end)
+                weekly_generated += 1
+            except Exception as e:
+                errors.append(f"Weekly {week_start}: {str(e)[:120]}")
+
+        logger.info(
+            "Backfill %s: monthly +%d (skip %d) | weekly +%d (skip %d) | errors %d",
+            client_id, monthly_generated, monthly_skipped,
+            weekly_generated, weekly_skipped, len(errors),
+        )
+        return {
+            "monthly_generated": monthly_generated,
+            "weekly_generated":  weekly_generated,
+            "monthly_skipped":   monthly_skipped,
+            "weekly_skipped":    weekly_skipped,
+            "errors": errors,
+        }
+
+    # ══════════════════════════════════════════════════════════════════════
+    #  PRIVATE HELPERS
+    # ══════════════════════════════════════════════════════════════════════
+
+    async def _get_client(self, client_id: uuid.UUID) -> Optional[Client]:
+        """Fetch a Client record by ID, returns None if not found."""
+        result = await self.db.execute(select(Client).where(Client.id == client_id))
+        return result.scalar_one_or_none()
+
+    async def _has_raw_google_ads_data(
+        self, client_id: uuid.UUID, start: date, end: date
+    ) -> bool:
+        """Return True if GoogleAdsCampaignRaw has any rows for this client/period."""
+        stmt = (
+            select(sa_func.count(GoogleAdsCampaignRaw.id))
+            .where(
+                and_(
+                    GoogleAdsCampaignRaw.client_id == client_id,
+                    GoogleAdsCampaignRaw.report_date >= start,
+                    GoogleAdsCampaignRaw.report_date <= end,
+                )
+            )
+        )
+        result = await self.db.execute(stmt)
+        return (result.scalar() or 0) > 0
+
+    # ═══════════════════════════�    # ── Google Ads ───────────────────────────────────────────────────────
     async def _google_ads_sections(
         self, client: Client, report_id: uuid.UUID,
         start: date, end: date, prev_start: date, prev_end: date,
@@ -308,26 +442,84 @@ class ReportGenerator:
         agg_keys = ["impressions", "clicks", "spend", "conversions", "conv_value"]
 
         # ── Campaign Summary ──
+        # Prefer API-pulled data (GoogleAdsCampaign); fall back to CSV raw data.
         rows = await self._query_date_range(GoogleAdsCampaign, client.id, start, end)
         prev_rows = await self._query_date_range(GoogleAdsCampaign, client.id, prev_start, prev_end)
+        using_raw = False
 
-        campaign_data = [_row_to_dict(r, campaign_keys) for r in rows]
-        totals = self._sum_rows(rows, agg_keys)
-        prev_totals = self._sum_rows(prev_rows, agg_keys)
-        summary = build_summary_with_derived(totals, prev_totals)
+        if not rows:
+            # No API data — use CSV-uploaded raw rows instead
+            raw_rows = await self._query_date_range(GoogleAdsCampaignRaw, client.id, start, end)
+            prev_raw_rows = await self._query_date_range(GoogleAdsCampaignRaw, client.id, prev_start, prev_end)
+            if raw_rows:
+                using_raw = True
+                # Map GoogleAdsCampaignRaw fields → canonical keys expected below
+                raw_campaign_keys = [
+                    "campaign_name", "impressions", "clicks",
+                    "spend", "ctr", "avg_cpc", "conversions", "conversion_rate",
+                    "conversion_value", "cost_per_conversion", "roas", "impression_share",
+                ]
+                raw_agg_keys = ["impressions", "clicks", "spend", "conversions", "conversion_value"]
+                campaign_data = [_row_to_dict(r, raw_campaign_keys) for r in raw_rows]
+                # Normalise field names to match what build_summary_with_derived expects
+                for d in campaign_data:
+                    d["conv_value"] = d.pop("conversion_value", None)
+                    d["cost_per_conv"] = d.pop("cost_per_conversion", None)
+                    d.setdefault("campaign_id", None)
 
-        sections.append(ReportSection(
-            report_id=report_id,
-            source="google_ads",
-            section_type="summary",
-            data={"summary": summary, "total_campaigns": len(set(r.campaign_id for r in rows))},
-        ))
-        sections.append(ReportSection(
-            report_id=report_id,
-            source="google_ads",
-            section_type="campaign_breakdown",
-            data={"campaigns": campaign_data},
-        ))
+                raw_totals = self._sum_rows(raw_rows, raw_agg_keys)
+                prev_raw_totals = self._sum_rows(prev_raw_rows, raw_agg_keys)
+                # Normalise totals keys
+                totals = {
+                    "impressions": raw_totals.get("impressions"),
+                    "clicks": raw_totals.get("clicks"),
+                    "spend": raw_totals.get("spend"),
+                    "conversions": raw_totals.get("conversions"),
+                    "conv_value": raw_totals.get("conversion_value"),
+                }
+                prev_totals = {
+                    "impressions": prev_raw_totals.get("impressions"),
+                    "clicks": prev_raw_totals.get("clicks"),
+                    "spend": prev_raw_totals.get("spend"),
+                    "conversions": prev_raw_totals.get("conversions"),
+                    "conv_value": prev_raw_totals.get("conversion_value"),
+                }
+                summary = build_summary_with_derived(totals, prev_totals)
+                sections.append(ReportSection(
+                    report_id=report_id,
+                    source="google_ads",
+                    section_type="summary",
+                    data={
+                        "summary": summary,
+                        "total_campaigns": len(set(r.campaign_name for r in raw_rows)),
+                        "data_source": "csv_upload",
+                    },
+                ))
+                sections.append(ReportSection(
+                    report_id=report_id,
+                    source="google_ads",
+                    section_type="campaign_breakdown",
+                    data={"campaigns": campaign_data, "data_source": "csv_upload"},
+                ))
+
+        if not using_raw:
+            campaign_data = [_row_to_dict(r, campaign_keys) for r in rows]
+            totals = self._sum_rows(rows, agg_keys)
+            prev_totals = self._sum_rows(prev_rows, agg_keys)
+            summary = build_summary_with_derived(totals, prev_totals)
+
+            sections.append(ReportSection(
+                report_id=report_id,
+                source="google_ads",
+                section_type="summary",
+                data={"summary": summary, "total_campaigns": len(set(r.campaign_id for r in rows))},
+            ))
+            sections.append(ReportSection(
+                report_id=report_id,
+                source="google_ads",
+                section_type="campaign_breakdown",
+                data={"campaigns": campaign_data},
+            ))
 
         # ── Search Terms (Top 10 by Clicks) ──
         st_stmt = (
@@ -345,7 +537,7 @@ class ReportGenerator:
         st_result = await self.db.execute(st_stmt)
         st_rows = st_result.scalars().all()
         if st_rows:
-            st_data = [_row_to_dict(r, ["search_term", "impressions", "clicks", "ctr", "avg_cpc", "conversions", "conv_value"]) for r in st_rows]
+            st_data = [_row_to_dict(r, ["search_term", "impressions", "clicks", "ctr", "avg_cpc", "conversions", "conv_value", "roas"]) for r in st_rows]
             sections.append(ReportSection(
                 report_id=report_id,
                 source="google_ads",
@@ -391,24 +583,6 @@ class ReportGenerator:
 
         # ── Demographics (Only for Non-Search campaigns) ──
         # Since searching campaigns do NOT have gender/age data according to spec
-        demo_rows = await self._query_date_range(GoogleAdsDemographic, client.id, start, end)
-        if demo_rows:
-            demo_data = [_row_to_dict(r, ["gender", "age_range", "impressions", "clicks", "spend", "conversions"]) for r in demo_rows]
-            sections.append(ReportSection(
-                report_id=report_id,
-                source="google_ads",
-                section_type="demographics",
-                data={"demographics": demo_data},
-            ))
-
-        return sections
-rt_id,
-                source="google_ads",
-                section_type="time_segments",
-                data={"day_of_week": day_data, "hour_of_day": hour_data},
-            ))
-
-        # ── Demographics ──
         demo_rows = await self._query_date_range(GoogleAdsDemographic, client.id, start, end)
         if demo_rows:
             demo_data = [_row_to_dict(r, ["gender", "age_range", "impressions", "clicks", "spend", "conversions"]) for r in demo_rows]
@@ -693,10 +867,20 @@ rt_id,
         prev_revenue = Decimal("0")
         platforms_active = []
 
-        # Google Ads
-        if client.google_ads_customer_id:
-            ga_rows = await self._query_date_range(GoogleAdsCampaign, client.id, start, end)
-            prev_ga = await self._query_date_range(GoogleAdsCampaign, client.id, prev_start, prev_end)
+        # Google Ads — use API data when available, fall back to raw CSV data
+        ga_rows = await self._query_date_range(GoogleAdsCampaign, client.id, start, end)
+        prev_ga = await self._query_date_range(GoogleAdsCampaign, client.id, prev_start, prev_end)
+        if not ga_rows:
+            ga_rows = await self._query_date_range(GoogleAdsCampaignRaw, client.id, start, end)
+            prev_ga = await self._query_date_range(GoogleAdsCampaignRaw, client.id, prev_start, prev_end)
+            if ga_rows:
+                total_spend += safe_sum([r.spend for r in ga_rows])
+                total_revenue += safe_sum([r.conversion_value for r in ga_rows if r.conversion_value])
+                total_conversions += safe_sum([r.conversions for r in ga_rows])
+                prev_spend += safe_sum([r.spend for r in prev_ga])
+                prev_revenue += safe_sum([r.conversion_value for r in prev_ga if r.conversion_value])
+                platforms_active.append("google_ads")
+        elif ga_rows:
             total_spend += safe_sum([r.spend for r in ga_rows])
             total_revenue += safe_sum([r.conv_value for r in ga_rows])
             total_conversions += safe_sum([r.conversions for r in ga_rows])

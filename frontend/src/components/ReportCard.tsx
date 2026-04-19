@@ -2,6 +2,7 @@
 import { FileBarChart, Calendar, CheckCircle, AlertCircle, Loader2, Layers } from 'lucide-react';
 import Link from 'next/link';
 import type { ReportSummary } from '../types';
+import React from 'react';
 
 interface ReportCardProps {
   report: ReportSummary;
@@ -11,27 +12,37 @@ interface ReportCardProps {
 
 export default function ReportCard({ report, clientName, style }: ReportCardProps) {
   const isWeekly = report.report_type === 'weekly';
-  const statusColor = report.status === 'ready'
-    ? 'var(--status-success)'
-    : report.status === 'failed'
-    ? 'var(--status-error)'
-    : 'var(--status-warning)';
-  const statusBg = report.status === 'ready'
-    ? 'var(--status-success-bg)'
-    : report.status === 'failed'
-    ? 'var(--status-error-bg)'
-    : 'var(--status-warning-bg)';
-  const StatusIcon = report.status === 'ready' ? CheckCircle : report.status === 'failed' ? AlertCircle : Loader2;
+  
+  // Status logic
+  let statusColor: string;
+  let statusBg: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let StatusIcon: React.FC<any>;
+
+  if (report.status === 'ready') {
+    statusColor = 'var(--status-success)';
+    statusBg = 'var(--status-success-bg)';
+    StatusIcon = CheckCircle;
+  } else if (report.status === 'failed') {
+    statusColor = 'var(--status-error)';
+    statusBg = 'var(--status-error-bg)';
+    StatusIcon = AlertCircle;
+  } else {
+    statusColor = 'var(--status-warning)';
+    statusBg = 'var(--status-warning-bg)';
+    StatusIcon = Loader2;
+  }
 
   const accentColor = isWeekly ? 'var(--accent-blue)' : 'var(--accent-purple)';
 
   const formatDate = (d: string) => {
+    if (!d) return 'N/A';
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <Link href={`/reports/${report.id}`} style={{ textDecoration: 'none', color: 'inherit', ...style }}>
-      <div className="glass-card" style={{ cursor: 'pointer', padding: 'var(--space-5) var(--space-6)' }}>
+      <div className="glass-card" style={{ cursor: 'pointer', padding: 'var(--space-5) var(--space-6)', transition: 'transform 0.2s' }}>
         {/* Top accent */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 2,
@@ -50,11 +61,11 @@ export default function ReportCard({ report, clientName, style }: ReportCardProp
               <FileBarChart size={18} color={accentColor} />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
+              <div style={{ fontWeight: 700, fontSize: '1rem' }}>
                 {isWeekly ? 'Weekly' : 'Monthly'} Report
               </div>
               {clientName && (
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                   {clientName}
                 </div>
               )}
@@ -62,8 +73,8 @@ export default function ReportCard({ report, clientName, style }: ReportCardProp
           </div>
 
           {/* Status badge */}
-          <div className="badge" style={{ background: statusBg, color: statusColor }}>
-            <StatusIcon size={11} className={report.status === 'generating' ? 'animate-spin' : ''} />
+          <div className="badge" style={{ background: statusBg, color: statusColor, padding: '0.3rem 0.75rem', fontSize: '0.875rem' }}>
+            <StatusIcon size={12} className={report.status === 'generating' ? 'animate-spin' : ''} />
             {report.status}
           </div>
         </div>
@@ -72,10 +83,10 @@ export default function ReportCard({ report, clientName, style }: ReportCardProp
         <div style={{
           display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
           marginBottom: 'var(--space-3)',
-          fontSize: '0.8125rem', color: 'var(--text-muted)'
+          fontSize: '0.9375rem', color: 'var(--text-muted)'
         }}>
-          <Calendar size={13} />
-          {formatDate(report.period_start)} — {formatDate(report.period_end)}
+          <Calendar size={14} />
+          <span style={{ fontWeight: 600 }}>{formatDate(report.period_start)}</span> — <span style={{ fontWeight: 600 }}>{formatDate(report.period_end)}</span>
         </div>
 
         {/* Footer */}
@@ -83,14 +94,14 @@ export default function ReportCard({ report, clientName, style }: ReportCardProp
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           paddingTop: 'var(--space-3)',
           borderTop: '1px solid rgba(255,255,255,0.05)',
-          fontSize: '0.75rem', color: 'var(--text-muted)'
+          fontSize: '0.8125rem', color: 'var(--text-muted)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <Layers size={12} />
             {report.section_count} sections
           </div>
           {report.generated_at && (
-            <span>Generated {formatDate(report.generated_at)}</span>
+            <span style={{ color: 'var(--text-secondary)' }}>Generated {formatDate(report.generated_at)}</span>
           )}
         </div>
       </div>

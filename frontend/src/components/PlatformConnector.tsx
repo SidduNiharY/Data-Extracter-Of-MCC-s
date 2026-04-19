@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X, Globe, Smartphone, Store, BarChart2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, X, Smartphone, Store, BarChart2, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../lib/api';
 
 interface PlatformConnectorProps {
@@ -52,7 +52,7 @@ export default function PlatformConnector({ clientId, onSuccess }: PlatformConne
       } else {
         setStatus({ type: 'error', message: 'Failed to connect. Please check your credentials.' });
       }
-    } catch (err) {
+    } catch {
       setStatus({ type: 'error', message: 'An unexpected error occurred.' });
     } finally {
       setLoading(false);

@@ -46,6 +46,7 @@ export default function ShopifyImportPage() {
         setSuccess(true);
         setTimeout(() => router.push(`/clients/${client.id}`), 1500);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error('Import failed', e);
       alert(e.response?.data?.detail || 'Import failed. Ensure SHOPIFY_ACCESS_TOKEN is set in backend .env');

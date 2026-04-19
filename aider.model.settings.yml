@@ -1,0 +1,5 @@
+- name: ollama_chat/gemma4:e4b
+  edit_format: diff-fenced
+  use_repo_map: true
+  reasoning_tag: think
+  streaming: true

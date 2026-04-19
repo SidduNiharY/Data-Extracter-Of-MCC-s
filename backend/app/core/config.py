@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/supermatrix"
-    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/supermatrix"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/supermatrix"
+    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@127.0.0.1:5432/supermatrix"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

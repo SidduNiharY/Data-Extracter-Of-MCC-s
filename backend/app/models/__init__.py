@@ -16,6 +16,7 @@ from app.models.meta_ads import (
 from app.models.shopify import ShopifyOrder, ShopifyProduct
 from app.models.ga4 import GA4Revenue, GA4ChannelBreakdown, GA4DeviceBreakdown
 from app.models.reports import Report, ReportSection
+from app.models.report_metrics import ReportMetric
 
 __all__ = [
     "Client",
@@ -37,4 +38,5 @@ __all__ = [
     "GA4DeviceBreakdown",
     "Report",
     "ReportSection",
+    "ReportMetric",
 ]
