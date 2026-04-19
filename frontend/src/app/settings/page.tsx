@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle, Settings, Database, Calendar, Globe } from 'lucide-react';
+import GlobalThresholdsCard from '@/components/dashboard/GlobalThresholdsCard';
 
 interface CredentialRow {
   label: string;
@@ -44,6 +45,10 @@ export default function SettingsPage() {
           Platform credentials, scheduler configuration, and application settings.
         </p>
       </header>
+
+      <section style={{ marginBottom: 'var(--space-10)' }}>
+        <GlobalThresholdsCard />
+      </section>
 
       {/* Platform Credentials */}
       <section style={{ marginBottom: 'var(--space-10)' }}>
