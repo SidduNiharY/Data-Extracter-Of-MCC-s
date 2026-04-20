@@ -1,0 +1,310 @@
+/* ───────────────────────────────────────────────
+   Performance Dashboard — Editorial Trading Terminal
+   Fraunces display serif × JetBrains Mono numerics
+   Obsidian ground · amber accent · pinstripe texture
+   ─────────────────────────────────────────────── */
+
+.page {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Subtle horizontal pinstripe + radial amber bloom in the hero */
+.page::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -2rem auto -2rem;
+  height: 420px;
+  background:
+    radial-gradient(
+      1200px 320px at 85% -10%,
+      rgba(245, 165, 36, 0.10),
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025) 0px,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 0%, transparent 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ─── Hero ─── */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2rem;
+  padding: 2rem 0 2.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-amber);
+  margin-bottom: 0.75rem;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: var(--accent-amber-line);
+}
+
+.title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2.5rem, 4.5vw, 3.75rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-amber);
+}
+
+.subtitle {
+  margin-top: 0.85rem;
+  max-width: 46ch;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.heroRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.clock {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.clock strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ─── KPI strip ─── */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--surface-border);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.kpi {
+  background: var(--bg-secondary);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.kpi:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.kpiLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kpiTick {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-amber);
+  box-shadow: 0 0 10px var(--accent-amber);
+}
+
+.kpiValue {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2.1rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiValueMono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiSub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Empty-state banner ─── */
+.banner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.5rem;
+  background:
+    linear-gradient(135deg, rgba(245, 165, 36, 0.08), rgba(245, 165, 36, 0.02));
+  border: 1px solid var(--accent-amber-line);
+  border-left-width: 3px;
+  border-radius: var(--radius-lg);
+}
+
+.bannerIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-amber-soft);
+  color: var(--accent-amber);
+  flex-shrink: 0;
+}
+
+.bannerTitle {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.15rem;
+}
+
+.bannerText {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.bannerText code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--accent-amber);
+}
+
+/* ─── Toolbar (filters + actions) ─── */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.25rem;
+}
+
+.toolbarDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--surface-border);
+  margin: 0 0.25rem;
+}
+
+/* ─── Table frame ─── */
+.tableFrame {
+  background: var(--bg-secondary);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.tableMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--surface-border);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tableMeta strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.loadingWell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 5rem 2rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ─── Entrance animation ─── */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rise {
+  animation: riseIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rise1 { animation-delay: 0.05s; }
+.rise2 { animation-delay: 0.15s; }
+.rise3 { animation-delay: 0.25s; }
+.rise4 { animation-delay: 0.35s; }
+
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .hero { flex-direction: column; align-items: flex-start; }
+}
